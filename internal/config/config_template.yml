@@ -1,0 +1,3 @@
+database:
+  provider: sqlite
+  url: ./dgstuff.db
