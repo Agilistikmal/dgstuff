@@ -57,7 +57,7 @@ func (s *StuffService) Create(ctx context.Context, dto model.StuffCreateDTO) (*m
 	if len(dto.Categories) > 0 {
 		var selectedCategories []model.StuffCategory
 		err = tx.Model(&model.StuffCategory{}).Where("id IN (?)", dto.Categories).Find(&selectedCategories).Error
-		if err != nil {
+		if err != nil || len(selectedCategories) != len(dto.Categories) {
 			tx.Rollback()
 			logrus.Errorf("gorm failed to get selected categories: %v", err)
 			return nil, app.NewBadRequestError("some categories not found or invalid")

@@ -1,8 +1,7 @@
 package middleware
 
 import (
-	"net/http"
-
+	"github.com/agilistikmal/dgstuff/internal/app"
 	"github.com/agilistikmal/dgstuff/internal/http/response"
 	"github.com/gofiber/fiber/v2"
 )
@@ -15,5 +14,5 @@ func NewInvalidMiddleware() *InvalidMiddleware {
 }
 
 func (m *InvalidMiddleware) Handle(c *fiber.Ctx) error {
-	return response.Error(c, http.StatusBadRequest, "invalid request")
+	return response.Error(c, app.NewBadRequestError("invalid request"))
 }

@@ -3,6 +3,7 @@ package handler
 import (
 	"net/http"
 
+	"github.com/agilistikmal/dgstuff/internal/app"
 	"github.com/agilistikmal/dgstuff/internal/http/response"
 	"github.com/agilistikmal/dgstuff/internal/model"
 	"github.com/agilistikmal/dgstuff/internal/service"
@@ -25,12 +26,12 @@ func (h *StuffHandler) InitRoutes(app *fiber.App) {
 func (h *StuffHandler) Create(c *fiber.Ctx) error {
 	var dto model.StuffCreateDTO
 	if err := c.BodyParser(&dto); err != nil {
-		return response.Error(c, http.StatusBadRequest, err.Error())
+		return response.Error(c, app.NewBadRequestError(err.Error()))
 	}
 
 	stuff, err := h.stuffService.Create(c.Context(), dto)
 	if err != nil {
-		return response.Error(c, http.StatusInternalServerError, err.Error())
+		return response.Error(c, err)
 	}
 
 	return response.Success(c, http.StatusCreated, stuff)
