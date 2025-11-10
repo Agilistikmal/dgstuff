@@ -29,7 +29,7 @@ func NewDatabase(provider string, url string) *gorm.DB {
 		return nil
 	}
 
-	err = db.AutoMigrate(&model.Stuff{})
+	err = db.AutoMigrate(&model.Stuff{}, &model.StuffCategory{}, &model.StuffMedia{})
 	if err != nil {
 		logrus.Errorf("failed to migrate database: %v", err)
 		return nil

@@ -14,26 +14,33 @@ func (e *AppError) Error() string {
 	return fmt.Sprintf("code: %d, message: %s", e.Code, e.Message)
 }
 
-func NewAppError() *AppError {
-	return &AppError{
-		Code:    http.StatusInternalServerError,
-		Message: http.StatusText(http.StatusInternalServerError),
-	}
-}
-
-func NewAppErrorWithCodeAndMessage(code int, message string) *AppError {
+func NewAppError(code int, message string) *AppError {
 	return &AppError{
 		Code:    code,
 		Message: message,
 	}
 }
 
-func (e *AppError) WithMessage(message string) *AppError {
-	e.Message = message
-	return e
+func NewUnauthorizedError() *AppError {
+	return NewAppError(http.StatusUnauthorized, "unauthorized")
 }
 
-func (e *AppError) WithCode(code int) *AppError {
-	e.Code = code
-	return e
+func NewBadRequestError(message string) *AppError {
+	return NewAppError(http.StatusBadRequest, message)
+}
+
+func NewInternalServerError() *AppError {
+	return NewAppError(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+}
+
+func NewNotFoundError(message string) *AppError {
+	return NewAppError(http.StatusNotFound, message)
+}
+
+func NewConflictError(message string) *AppError {
+	return NewAppError(http.StatusConflict, message)
+}
+
+func NewValidationFailedError(message string) *AppError {
+	return NewAppError(http.StatusUnprocessableEntity, message)
 }
