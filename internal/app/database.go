@@ -7,19 +7,24 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 func NewDatabase(provider string, url string) *gorm.DB {
 	var db *gorm.DB
 	var err error
 
+	gormConfig := &gorm.Config{
+		Logger: logger.Default,
+	}
+
 	switch provider {
 	case "sqlite":
-		db, err = gorm.Open(sqlite.Open(url), &gorm.Config{})
+		db, err = gorm.Open(sqlite.Open(url), gormConfig)
 	case "mysql":
-		db, err = gorm.Open(mysql.Open(url), &gorm.Config{})
+		db, err = gorm.Open(mysql.Open(url), gormConfig)
 	case "postgres":
-		db, err = gorm.Open(postgres.Open(url), &gorm.Config{})
+		db, err = gorm.Open(postgres.Open(url), gormConfig)
 	default:
 		logrus.Errorf("invalid database provider: %s", provider)
 	}
@@ -29,7 +34,10 @@ func NewDatabase(provider string, url string) *gorm.DB {
 		return nil
 	}
 
-	err = db.AutoMigrate(&model.Stuff{}, &model.StuffCategory{}, &model.StuffMedia{})
+	err = db.AutoMigrate(
+		&model.Stuff{}, &model.StuffCategory{}, &model.StuffMedia{},
+		&model.Transaction{}, &model.TransactionStuff{}, &model.TransactionPayment{},
+	)
 	if err != nil {
 		logrus.Errorf("failed to migrate database: %v", err)
 		return nil

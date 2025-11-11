@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/agilistikmal/dgstuff/internal/app"
+	"github.com/agilistikmal/dgstuff/internal/http/paginated"
 	"github.com/agilistikmal/dgstuff/internal/model"
 	"github.com/agilistikmal/dgstuff/internal/pkg"
 	"github.com/sirupsen/logrus"
@@ -26,6 +27,11 @@ func (s *StuffService) Create(ctx context.Context, dto model.StuffCreateDTO) (*m
 	}
 
 	tx := s.db.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
 
 	slug := pkg.GenerateSlug(dto.Name, false)
 
@@ -46,6 +52,24 @@ func (s *StuffService) Create(ctx context.Context, dto model.StuffCreateDTO) (*m
 		DiscountPrice: dto.DiscountPrice,
 	}
 
+	if len(dto.Categories) > 0 {
+		for _, category := range dto.Categories {
+			var findCategory model.StuffCategory
+			err := tx.Where("name = ?", category).First(&findCategory).Error
+			if err != nil {
+				newCategory := model.StuffCategory{Name: category}
+				err = tx.Save(&newCategory).Error
+				if err != nil {
+					tx.Rollback()
+					logrus.Errorf("gorm failed to create category: %v", err)
+					return nil, app.NewInternalServerError()
+				}
+				findCategory = newCategory
+			}
+			stuff.Categories = append(stuff.Categories, findCategory)
+		}
+	}
+
 	for _, media := range dto.Medias {
 		stuff.Medias = append(stuff.Medias, model.StuffMedia{
 			URL:      media.URL,
@@ -54,18 +78,7 @@ func (s *StuffService) Create(ctx context.Context, dto model.StuffCreateDTO) (*m
 		})
 	}
 
-	if len(dto.Categories) > 0 {
-		var selectedCategories []model.StuffCategory
-		err = tx.Model(&model.StuffCategory{}).Where("id IN (?)", dto.Categories).Find(&selectedCategories).Error
-		if err != nil || len(selectedCategories) != len(dto.Categories) {
-			tx.Rollback()
-			logrus.Errorf("gorm failed to get selected categories: %v", err)
-			return nil, app.NewBadRequestError("some categories not found or invalid")
-		}
-		stuff.Categories = selectedCategories
-	}
-
-	err = tx.Create(&stuff).Error
+	err = tx.Save(&stuff).Error
 	if err != nil {
 		tx.Rollback()
 		logrus.Errorf("gorm failed to create stuff: %v", err)
@@ -75,4 +88,57 @@ func (s *StuffService) Create(ctx context.Context, dto model.StuffCreateDTO) (*m
 	tx.Commit()
 
 	return &stuff, nil
+}
+
+func (s *StuffService) GetBySlug(ctx context.Context, slug string) (*model.Stuff, error) {
+	var stuff model.Stuff
+	err := s.db.Where("slug = ?", slug).First(&stuff).Error
+	if err != nil {
+		return nil, app.NewNotFoundError("stuff not found")
+	}
+	return &stuff, nil
+}
+
+func (s *StuffService) GetAll(ctx context.Context, page int, limit int) (*paginated.Paginated[model.Stuff], error) {
+	p := paginated.NewPaginated[model.Stuff](page, limit)
+
+	var stuffs []model.Stuff
+	err := s.db.Offset(p.GetOffset()).Limit(limit).Find(&stuffs).Error
+	if err != nil {
+		return nil, app.NewInternalServerError()
+	}
+	p.Data = stuffs
+
+	var totalItems int64
+	err = s.db.Model(&model.Stuff{}).Count(&totalItems).Error
+	if err != nil {
+		return nil, app.NewInternalServerError()
+	}
+	p.CalculateMetadata(totalItems)
+
+	return p, nil
+}
+
+func (s *StuffService) GetByCategory(ctx context.Context, categoryID int, page int, limit int) (*paginated.Paginated[model.Stuff], error) {
+	p := paginated.NewPaginated[model.Stuff](page, limit)
+
+	baseQuery := s.db.Model(&model.Stuff{}).
+		Joins("JOIN stuff_category_relation ON stuffs.id = stuff_category_relation.stuff_id").
+		Where("stuff_category_relation.category_id = ?", categoryID)
+
+	var stuffs []model.Stuff
+	err := baseQuery.Preload("Categories").Preload("Medias").Offset(p.GetOffset()).Limit(limit).Find(&stuffs).Error
+	if err != nil {
+		return nil, app.NewInternalServerError()
+	}
+	p.Data = stuffs
+
+	var totalItems int64
+	err = baseQuery.Count(&totalItems).Error
+	if err != nil {
+		return nil, app.NewInternalServerError()
+	}
+	p.CalculateMetadata(totalItems)
+
+	return p, nil
 }

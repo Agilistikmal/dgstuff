@@ -7,7 +7,7 @@ import (
 type Stuff struct {
 	ID            int             `json:"id" gorm:"primaryKey;autoIncrement"`
 	Slug          string          `json:"slug"`
-	Categories    []StuffCategory `json:"categories" gorm:"many2many:stuff_categories;joinForeignKey:StuffID;joinReferences:CategoryID"`
+	Categories    []StuffCategory `json:"categories" gorm:"many2many:stuff_category_relation;joinForeignKey:StuffID;joinReferences:CategoryID"`
 	Name          string          `json:"name"`
 	Description   string          `json:"description"`
 	Price         float64         `json:"price"`
@@ -23,11 +23,6 @@ type Stuff struct {
 type StuffCategory struct {
 	ID   int    `json:"id" gorm:"primaryKey;autoIncrement"`
 	Name string `json:"name"`
-}
-
-type StuffCategoryRelation struct {
-	StuffID    int `json:"stuff_id"`
-	CategoryID int `json:"category_id"`
 }
 
 type StuffMediaType string
@@ -48,7 +43,7 @@ type StuffMedia struct {
 // DTO
 
 type StuffCreateDTO struct {
-	Categories    []int                 `json:"categories" validate:"omitempty,max=5"`
+	Categories    []string              `json:"categories" validate:"omitempty,max=5"`
 	Name          string                `json:"name" validate:"required,max=255"`
 	Description   string                `json:"description" validate:"required,max=1000"`
 	Price         float64               `json:"price" validate:"required,min=0"`

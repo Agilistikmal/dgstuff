@@ -8,7 +8,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-type Response struct {
+type ErrorResponse struct {
 	Status  string      `json:"status"`
 	Message string      `json:"message"`
 	Data    interface{} `json:"data"`
@@ -21,12 +21,12 @@ func Success(c *fiber.Ctx, code int, data interface{}) error {
 func Error(c *fiber.Ctx, err error) error {
 	var appErr *app.AppError
 	if errors.As(err, &appErr) {
-		return c.Status(appErr.Code).JSON(&Response{
+		return c.Status(appErr.Code).JSON(&ErrorResponse{
 			Status:  http.StatusText(appErr.Code),
 			Message: appErr.Message,
 		})
 	} else {
-		return c.Status(http.StatusInternalServerError).JSON(&Response{
+		return c.Status(http.StatusInternalServerError).JSON(&ErrorResponse{
 			Status:  http.StatusText(http.StatusInternalServerError),
 			Message: "internal server error",
 		})
