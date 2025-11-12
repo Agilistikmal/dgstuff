@@ -23,15 +23,23 @@ type Transaction struct {
 }
 
 type TransactionStuff struct {
-	ID            int      `json:"id" gorm:"primaryKey;autoIncrement"`
-	TransactionID string   `json:"transaction_id"`
-	StuffID       int      `json:"stuff_id"`
-	StuffName     string   `json:"stuff_name"`
-	StuffSlug     string   `json:"stuff_slug"`
-	StuffPrice    float64  `json:"stuff_price"`
-	Quantity      int      `json:"quantity"`
-	TotalPrice    float64  `json:"total_price"`
-	Currency      Currency `json:"currency"`
+	ID            int                   `json:"id" gorm:"primaryKey;autoIncrement"`
+	TransactionID string                `json:"transaction_id"`
+	StuffID       int                   `json:"stuff_id"`
+	StuffName     string                `json:"stuff_name"`
+	StuffSlug     string                `json:"stuff_slug"`
+	StuffPrice    float64               `json:"stuff_price"`
+	Quantity      int                   `json:"quantity"`
+	TotalPrice    float64               `json:"total_price"`
+	Currency      Currency              `json:"currency"`
+	Data          *TransactionStuffData `json:"data,omitempty" gorm:"foreignKey:TransactionStuffID"`
+}
+
+type TransactionStuffData struct {
+	ID                 int    `json:"id"`
+	TransactionStuffID int    `json:"transaction_stuff_id"`
+	Values             string `json:"values"`
+	Separator          string `json:"separator"`
 }
 
 type TransactionPayment struct {

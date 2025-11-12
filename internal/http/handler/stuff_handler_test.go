@@ -18,7 +18,13 @@ import (
 	"gorm.io/gorm"
 )
 
-func setupTest(t *testing.T) (*fiber.App, *service.StuffService, *gorm.DB) {
+type stuffTest struct {
+	app          *fiber.App
+	stuffService *service.StuffService
+	db           *gorm.DB
+}
+
+func setupStuffTest(t *testing.T) *stuffTest {
 	db := app.NewDatabase("sqlite", ":memory:")
 	validator := app.NewValidator()
 	stuffService := service.NewStuffService(db, validator)
@@ -33,16 +39,20 @@ func setupTest(t *testing.T) (*fiber.App, *service.StuffService, *gorm.DB) {
 	assert.NotNil(t, handler)
 	assert.NotNil(t, app)
 
-	return app, stuffService, db
+	return &stuffTest{
+		app:          app,
+		stuffService: stuffService,
+		db:           db,
+	}
 }
 
-func cleanupTest(db *gorm.DB) {
-	db.Migrator().DropTable(&model.Stuff{}, &model.StuffCategory{}, &model.StuffMedia{}, "stuff_category_relation")
+func (s *stuffTest) cleanup() {
+	s.db.Migrator().DropTable(&model.Stuff{}, &model.StuffCategory{}, &model.StuffMedia{}, "stuff_category_relation")
 }
 
 func TestStuffHandler_CreateCategoryNotExists(t *testing.T) {
-	app, _, db := setupTest(t)
-	defer cleanupTest(db)
+	s := setupStuffTest(t)
+	defer s.cleanup()
 
 	body := bytes.NewBuffer([]byte(`
 		{
@@ -50,7 +60,6 @@ func TestStuffHandler_CreateCategoryNotExists(t *testing.T) {
 			"description": "Test Description",
 			"price": 100000,
 			"currency": "IDR",
-			"stock_count": 100,
 			"is_active": true,
 			"medias": [
 				{
@@ -71,7 +80,7 @@ func TestStuffHandler_CreateCategoryNotExists(t *testing.T) {
 	req := httptest.NewRequest("POST", "/api/stuff", body)
 	req.Header.Set("Content-Type", "application/json")
 
-	response, err := app.Test(req)
+	response, err := s.app.Test(req)
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusCreated, response.StatusCode)
 
@@ -85,8 +94,8 @@ func TestStuffHandler_CreateCategoryNotExists(t *testing.T) {
 }
 
 func TestStuffHandler_CreateSuccess(t *testing.T) {
-	app, _, db := setupTest(t)
-	defer cleanupTest(db)
+	s := setupStuffTest(t)
+	defer s.cleanup()
 
 	body := bytes.NewBuffer([]byte(`
 		{
@@ -115,28 +124,27 @@ func TestStuffHandler_CreateSuccess(t *testing.T) {
 	req := httptest.NewRequest("POST", "/api/stuff", body)
 	req.Header.Set("Content-Type", "application/json")
 
-	response, err := app.Test(req)
+	response, err := s.app.Test(req)
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusCreated, response.StatusCode)
 }
 
 func TestStuffHandler_GetBySlugSuccess(t *testing.T) {
-	app, stuffService, db := setupTest(t)
-	defer cleanupTest(db)
+	s := setupStuffTest(t)
+	defer s.cleanup()
 
-	stuff, err := stuffService.Create(context.Background(), model.StuffCreateDTO{
+	stuff, err := s.stuffService.Create(context.Background(), model.StuffCreateDTO{
 		Name:        "Test Stuff",
 		Description: "Test Description",
 		Price:       100000,
 		Currency:    "IDR",
-		StockCount:  100,
 		IsActive:    true,
 	})
 	assert.NoError(t, err)
 	assert.NotNil(t, stuff)
 
 	req := httptest.NewRequest("GET", fmt.Sprintf("/api/stuff/%s", stuff.Slug), nil)
-	response, err := app.Test(req)
+	response, err := s.app.Test(req)
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, response.StatusCode)
 
@@ -148,27 +156,25 @@ func TestStuffHandler_GetBySlugSuccess(t *testing.T) {
 	assert.Equal(t, stuff.Description, responseBody.Description)
 	assert.Equal(t, stuff.Price, responseBody.Price)
 	assert.Equal(t, stuff.Currency, responseBody.Currency)
-	assert.Equal(t, stuff.StockCount, responseBody.StockCount)
 	assert.Equal(t, stuff.IsActive, responseBody.IsActive)
 }
 
 func TestStuffHandler_GetAllSuccess(t *testing.T) {
-	app, stuffService, db := setupTest(t)
-	defer cleanupTest(db)
+	s := setupStuffTest(t)
+	defer s.cleanup()
 
-	stuff, err := stuffService.Create(context.Background(), model.StuffCreateDTO{
+	stuff, err := s.stuffService.Create(context.Background(), model.StuffCreateDTO{
 		Name:        "Test Stuff",
 		Description: "Test Description",
 		Price:       100000,
 		Currency:    "IDR",
-		StockCount:  100,
 		IsActive:    true,
 	})
 	assert.NoError(t, err)
 	assert.NotNil(t, stuff)
 
 	req := httptest.NewRequest("GET", "/api/stuff", nil)
-	response, err := app.Test(req)
+	response, err := s.app.Test(req)
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, response.StatusCode)
 
@@ -181,20 +187,18 @@ func TestStuffHandler_GetAllSuccess(t *testing.T) {
 	assert.Equal(t, stuff.Description, responseBody.Data[0].Description)
 	assert.Equal(t, stuff.Price, responseBody.Data[0].Price)
 	assert.Equal(t, stuff.Currency, responseBody.Data[0].Currency)
-	assert.Equal(t, stuff.StockCount, responseBody.Data[0].StockCount)
 	assert.Equal(t, stuff.IsActive, responseBody.Data[0].IsActive)
 }
 
 func TestStuffHandler_GetByCategorySuccess(t *testing.T) {
-	app, stuffService, db := setupTest(t)
-	defer cleanupTest(db)
+	s := setupStuffTest(t)
+	defer s.cleanup()
 
-	stuff, err := stuffService.Create(context.Background(), model.StuffCreateDTO{
+	stuff, err := s.stuffService.Create(context.Background(), model.StuffCreateDTO{
 		Name:        "Test Stuff",
 		Description: "Test Description",
 		Price:       100000,
 		Currency:    "IDR",
-		StockCount:  100,
 		IsActive:    true,
 		Categories:  []string{"Account", "Game", "Minecraft"},
 	})
@@ -202,7 +206,7 @@ func TestStuffHandler_GetByCategorySuccess(t *testing.T) {
 	assert.NotNil(t, stuff)
 
 	req := httptest.NewRequest("GET", fmt.Sprintf("/api/stuff/category/%d", stuff.Categories[0].ID), nil)
-	response, err := app.Test(req)
+	response, err := s.app.Test(req)
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, response.StatusCode)
 
@@ -215,6 +219,5 @@ func TestStuffHandler_GetByCategorySuccess(t *testing.T) {
 	assert.Equal(t, stuff.Description, responseBody.Data[0].Description)
 	assert.Equal(t, stuff.Price, responseBody.Data[0].Price)
 	assert.Equal(t, stuff.Currency, responseBody.Data[0].Currency)
-	assert.Equal(t, stuff.StockCount, responseBody.Data[0].StockCount)
 	assert.Equal(t, stuff.IsActive, responseBody.Data[0].IsActive)
 }

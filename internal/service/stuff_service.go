@@ -47,7 +47,6 @@ func (s *StuffService) Create(ctx context.Context, dto model.StuffCreateDTO) (*m
 		Description:   dto.Description,
 		Price:         dto.Price,
 		Currency:      model.Currency(dto.Currency),
-		StockCount:    dto.StockCount,
 		IsActive:      dto.IsActive,
 		DiscountPrice: dto.DiscountPrice,
 	}

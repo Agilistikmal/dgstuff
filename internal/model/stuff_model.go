@@ -2,6 +2,8 @@ package model
 
 import (
 	"time"
+
+	"gorm.io/gorm"
 )
 
 type Stuff struct {
@@ -13,11 +15,17 @@ type Stuff struct {
 	Price         float64         `json:"price"`
 	DiscountPrice *float64        `json:"discount_price,omitempty"`
 	Currency      Currency        `json:"currency"`
-	StockCount    int             `json:"stock_count"`
+	Stock         Stock           `json:"stock,omitempty" gorm:"foreignKey:StuffID"`
 	IsActive      bool            `json:"is_active"`
 	Medias        []StuffMedia    `json:"medias" gorm:"foreignKey:StuffID"`
 	CreatedAt     *time.Time      `json:"created_at"`
 	UpdatedAt     *time.Time      `json:"updated_at"`
+}
+
+func (s *Stuff) AfterFind(tx *gorm.DB) error {
+	s.Stock.Count = s.Stock.CountValues()
+	s.Stock.Values = ""
+	return nil
 }
 
 type StuffCategory struct {
@@ -49,7 +57,6 @@ type StuffCreateDTO struct {
 	Price         float64               `json:"price" validate:"required,min=0"`
 	DiscountPrice *float64              `json:"discount_price" validate:"omitempty,min=0"`
 	Currency      string                `json:"currency" validate:"required,oneof=USD IDR"`
-	StockCount    int                   `json:"stock_count" validate:"omitempty,min=0"`
 	IsActive      bool                  `json:"is_active" validate:"omitempty,boolean"`
 	Medias        []StuffMediaCreateDTO `json:"medias" validate:"omitempty,max=10"`
 }

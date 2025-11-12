@@ -1,3 +1,14 @@
 database:
+  # Database provider. supported: sqlite, mysql, postgres
   provider: sqlite
+  # Database URL. support sqlite, mysql, postgres.
+  # Example:
+  # sqlite: file.db
+  # mysql: user:password@tcp(host:port)/database
+  # postgres: user:password@host:port/database
   url: ./dgstuff.db
+
+stock:
+  # Secret key to encrypt and decrypt the stock values
+  # This is generated random key. but you can change it to your own secret key
+  secret_key: "<random-key>"
