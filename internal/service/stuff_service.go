@@ -141,3 +141,58 @@ func (s *StuffService) GetByCategory(ctx context.Context, categoryID int, page i
 
 	return p, nil
 }
+
+func (s *StuffService) Update(ctx context.Context, stuffID int, dto model.StuffUpdateDTO) error {
+	err := s.validator.Validate(dto)
+	if err != nil {
+		return err
+	}
+
+	tx := s.db.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	var findStuff model.Stuff
+	err = tx.Where("id = ?", stuffID).First(&findStuff).Error
+	if err != nil {
+		tx.Rollback()
+		logrus.Errorf("gorm failed to find stuff by id: %v", err)
+		return app.NewNotFoundError("stuff not found")
+	}
+
+	findStuff.Name = dto.Name
+	findStuff.Description = dto.Description
+	findStuff.Price = dto.Price
+	findStuff.Currency = model.Currency(dto.Currency)
+	findStuff.DiscountPrice = dto.DiscountPrice
+	findStuff.IsActive = dto.IsActive
+
+	err = tx.Save(&findStuff).Error
+	if err != nil {
+		tx.Rollback()
+		logrus.Errorf("gorm failed to update stuff: %v", err)
+		return app.NewInternalServerError()
+	}
+
+	err = tx.Commit().Error
+	if err != nil {
+		tx.Rollback()
+		logrus.Errorf("gorm failed to commit transaction: %v", err)
+		return err
+	}
+
+	return nil
+}
+
+func (s *StuffService) Delete(ctx context.Context, stuffID int) error {
+	err := s.db.Where("id = ?", stuffID).Delete(&model.Stuff{}).Error
+	if err != nil {
+		logrus.Errorf("gorm failed to delete stuff: %v", err)
+		return app.NewInternalServerError()
+	}
+
+	return nil
+}

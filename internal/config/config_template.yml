@@ -12,3 +12,8 @@ stock:
   # Secret key to encrypt and decrypt the stock values
   # This is generated random key. but you can change it to your own secret key
   secret_key: "<random-key>"
+
+transaction:
+  # Prefix to generate the transaction ID
+  # Example: TRXASDJKL690
+  prefix: "TRX"

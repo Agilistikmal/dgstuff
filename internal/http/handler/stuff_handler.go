@@ -21,6 +21,8 @@ func NewStuffHandler(stuffService *service.StuffService) *StuffHandler {
 func (h *StuffHandler) InitRoutes(app *fiber.App) {
 	apiStuff := app.Group("/api/stuff")
 	apiStuff.Post("/", h.Create)
+	apiStuff.Put("/:stuff_id", h.Update)
+	apiStuff.Delete("/:stuff_id", h.Delete)
 	apiStuff.Get("/:slug", h.GetBySlug)
 	apiStuff.Get("/", h.GetAll)
 	apiStuff.Get("/category/:category_id", h.GetByCategory)
@@ -75,4 +77,32 @@ func (h *StuffHandler) GetByCategory(c *fiber.Ctx) error {
 	}
 
 	return response.Success(c, http.StatusOK, stuffs)
+}
+
+func (h *StuffHandler) Update(c *fiber.Ctx) error {
+	stuffID, err := c.ParamsInt("stuff_id")
+	if err != nil {
+		return response.Error(c, app.NewBadRequestError("stuff id must be an integer"))
+	}
+	var dto model.StuffUpdateDTO
+	if err := c.BodyParser(&dto); err != nil {
+		return response.Error(c, app.NewBadRequestError(err.Error()))
+	}
+	err = h.stuffService.Update(c.Context(), stuffID, dto)
+	if err != nil {
+		return response.Error(c, err)
+	}
+	return response.Success(c, http.StatusOK, nil)
+}
+
+func (h *StuffHandler) Delete(c *fiber.Ctx) error {
+	stuffID, err := c.ParamsInt("stuff_id")
+	if err != nil {
+		return response.Error(c, app.NewBadRequestError("stuff id must be an integer"))
+	}
+	err = h.stuffService.Delete(c.Context(), stuffID)
+	if err != nil {
+		return response.Error(c, err)
+	}
+	return response.Success(c, http.StatusOK, nil)
 }

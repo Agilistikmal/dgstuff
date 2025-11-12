@@ -14,7 +14,7 @@ type Transaction struct {
 	ID        string             `json:"id" gorm:"primaryKey"`
 	Email     string             `json:"email"`
 	Amount    float64            `json:"amount"`
-	Currency  string             `json:"currency"`
+	Currency  Currency           `json:"currency"`
 	Status    TransactionStatus  `json:"status"`
 	Stuffs    []TransactionStuff `json:"stuffs" gorm:"foreignKey:TransactionID"`
 	Payment   TransactionPayment `json:"payment" gorm:"foreignKey:TransactionID"`
@@ -42,6 +42,18 @@ type TransactionStuffData struct {
 	Separator          string `json:"separator"`
 }
 
+type TransactionPaymentMethod string
+
+const (
+	TransactionPaymentMethodVirtualAccount TransactionPaymentMethod = "virtual_account"
+	TransactionPaymentMethodQRIS           TransactionPaymentMethod = "qris"
+	TransactionPaymentMethodEWallet        TransactionPaymentMethod = "e_wallet"
+	TransactionPaymentMethodCreditCard     TransactionPaymentMethod = "credit_card"
+	TransactionPaymentMethodDebitCard      TransactionPaymentMethod = "debit_card"
+	TransactionPaymentMethodPaypal         TransactionPaymentMethod = "paypal"
+	TransactionPaymentMethodStripe         TransactionPaymentMethod = "stripe"
+)
+
 type TransactionPayment struct {
 	ID               string    `json:"id" gorm:"primaryKey"`
 	TransactionID    string    `json:"transaction_id"`
@@ -55,4 +67,20 @@ type TransactionPayment struct {
 	PayerName        string    `json:"payer_name"`
 	PaymentCreatedAt time.Time `json:"payment_created_at"`
 	PaymentUpdatedAt time.Time `json:"payment_updated_at"`
+}
+
+// DTO
+
+type TransactionCreateDTO struct {
+	Email         string                      `json:"email" validate:"required,email"`
+	Amount        float64                     `json:"amount" validate:"required,min=0"`
+	Currency      string                      `json:"currency" validate:"required,oneof=USD IDR"`
+	Status        string                      `json:"status" validate:"required,oneof=pending success failed"`
+	Stuffs        []TransactionStuffCreateDTO `json:"stuffs" validate:"required,max=10"`
+	PaymentMethod TransactionPaymentMethod    `json:"payment_method" validate:"required,oneof=virtual_account qris e_wallet credit_card debit_card paypal stripe"`
+}
+
+type TransactionStuffCreateDTO struct {
+	StuffID  int `json:"stuff_id" validate:"required"`
+	Quantity int `json:"quantity" validate:"required,min=1"`
 }

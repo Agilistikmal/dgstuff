@@ -221,3 +221,72 @@ func TestStuffHandler_GetByCategorySuccess(t *testing.T) {
 	assert.Equal(t, stuff.Currency, responseBody.Data[0].Currency)
 	assert.Equal(t, stuff.IsActive, responseBody.Data[0].IsActive)
 }
+
+func TestStuffHandler_UpdateSuccess(t *testing.T) {
+	s := setupStuffTest(t)
+	defer s.cleanup()
+
+	stuff, err := s.stuffService.Create(context.Background(), model.StuffCreateDTO{
+		Name:        "Test Stuff",
+		Description: "Test Description",
+		Price:       100000,
+		Currency:    "IDR",
+		IsActive:    true,
+	})
+	assert.NoError(t, err)
+	assert.NotNil(t, stuff)
+
+	body := bytes.NewBuffer([]byte(`
+		{
+			"name": "Test Stuff Updated",
+			"description": "Test Description Updated",
+			"price": 100000,
+			"currency": "IDR",
+			"is_active": false
+		}
+	`))
+	req := httptest.NewRequest("PUT", fmt.Sprintf("/api/stuff/%d", stuff.ID), body)
+	req.Header.Set("Content-Type", "application/json")
+	response, err := s.app.Test(req)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, response.StatusCode)
+
+	req = httptest.NewRequest("GET", fmt.Sprintf("/api/stuff/%s", stuff.Slug), nil)
+	response, err = s.app.Test(req)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, response.StatusCode)
+
+	var responseBody model.Stuff
+	err = json.NewDecoder(response.Body).Decode(&responseBody)
+	assert.NoError(t, err)
+	assert.Equal(t, stuff.ID, responseBody.ID)
+	assert.Equal(t, "Test Stuff Updated", responseBody.Name)
+	assert.Equal(t, "Test Description Updated", responseBody.Description)
+	assert.Equal(t, false, responseBody.IsActive)
+}
+
+func TestStuffHandler_DeleteSuccess(t *testing.T) {
+	s := setupStuffTest(t)
+	defer s.cleanup()
+
+	stuff, err := s.stuffService.Create(context.Background(), model.StuffCreateDTO{
+		Name:        "Test Stuff",
+		Description: "Test Description",
+		Price:       100000,
+		Currency:    "IDR",
+		IsActive:    true,
+	})
+	assert.NoError(t, err)
+	assert.NotNil(t, stuff)
+
+	req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/stuff/%d", stuff.ID), nil)
+	req.Header.Set("Content-Type", "application/json")
+	response, err := s.app.Test(req)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, response.StatusCode)
+
+	req = httptest.NewRequest("GET", fmt.Sprintf("/api/stuff/%d", stuff.ID), nil)
+	response, err = s.app.Test(req)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusNotFound, response.StatusCode)
+}

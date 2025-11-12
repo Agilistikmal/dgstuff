@@ -66,3 +66,12 @@ type StuffMediaCreateDTO struct {
 	Type     string `json:"type" validate:"required,oneof=image video"`
 	Position int    `json:"position" validate:"omitempty,min=0"`
 }
+
+type StuffUpdateDTO struct {
+	Name          string   `json:"name" validate:"required,max=255"`
+	Description   string   `json:"description" validate:"required,max=1000"`
+	Price         float64  `json:"price" validate:"required,min=0"`
+	DiscountPrice *float64 `json:"discount_price" validate:"omitempty,min=0"`
+	Currency      string   `json:"currency" validate:"required,oneof=USD IDR"`
+	IsActive      bool     `json:"is_active" validate:"omitempty,boolean"`
+}
