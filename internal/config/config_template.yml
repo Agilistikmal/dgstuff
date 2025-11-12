@@ -17,3 +17,8 @@ transaction:
   # Prefix to generate the transaction ID
   # Example: TRXASDJKL690
   prefix: "TRX"
+
+payment:
+  # Expiration time for the payment invoice
+  # Example: 1h
+  expiration_time: 1h
