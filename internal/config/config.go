@@ -29,11 +29,7 @@ func LoadConfig() *viper.Viper {
 			os.WriteFile("config.yml", []byte(configTemplate), 0644)
 			logrus.Warnf("default config created. you can edit the config file and run the application again to apply the changes")
 
-			if err := viper.ReadInConfig(); err != nil {
-				logrus.Fatalf("failed to read config: %v", err)
-			}
-
-			return viper.GetViper()
+			os.Exit(0)
 		} else {
 			logrus.Fatalf("failed to read config: %v", err)
 		}

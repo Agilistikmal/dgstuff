@@ -3,7 +3,9 @@ package xendit_payment
 import (
 	"context"
 
+	"github.com/agilistikmal/dgstuff/internal/app"
 	"github.com/agilistikmal/dgstuff/internal/pkg/payment"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"github.com/xendit/xendit-go/v7"
 	"github.com/xendit/xendit-go/v7/invoice"
@@ -48,6 +50,11 @@ func (p *XenditPayment) CreateInvoice(ctx context.Context, request payment.Payme
 		Execute()
 	if err != nil {
 		return nil, err
+	}
+
+	if inv.Id == nil {
+		logrus.Errorf("xendit failed to create invoice: %v", err)
+		return nil, app.NewInternalServerError()
 	}
 
 	payment := payment.Payment{

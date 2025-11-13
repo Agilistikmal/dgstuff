@@ -22,3 +22,7 @@ payment:
   # Expiration time for the payment invoice
   # Example: 1h
   expiration_time: 1h
+  provider:
+    xendit:
+      api_key: "<xendit-api-key>"
+      callback_token: "<xendit-callback-token>"

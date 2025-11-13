@@ -8,7 +8,6 @@ import (
 	"github.com/agilistikmal/dgstuff/internal/model"
 	"github.com/agilistikmal/dgstuff/internal/pkg"
 	"github.com/agilistikmal/dgstuff/internal/pkg/payment"
-	"github.com/agilistikmal/dgstuff/internal/pkg/payment/xendit_payment"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"gorm.io/gorm"
@@ -17,10 +16,10 @@ import (
 type TransactionService struct {
 	db            *gorm.DB
 	validator     *app.Validator
-	xenditPayment *xendit_payment.XenditPayment
+	xenditPayment payment.PaymentService
 }
 
-func NewTransactionService(db *gorm.DB, validator *app.Validator, xenditPayment *xendit_payment.XenditPayment) *TransactionService {
+func NewTransactionService(db *gorm.DB, validator *app.Validator, xenditPayment payment.PaymentService) *TransactionService {
 	return &TransactionService{db: db, validator: validator, xenditPayment: xenditPayment}
 }
 
@@ -103,8 +102,12 @@ func (s *TransactionService) createPayment(ctx context.Context, transaction mode
 		Amount:        transaction.Amount,
 		Currency:      string(transaction.Currency),
 		Customer: payment.PaymentCustomer{
-			Name:  transaction.Email,
-			Email: transaction.Email,
+			Name:    transaction.Email,
+			Email:   transaction.Email,
+			Phone:   "081234567890",
+			Address: "Jl. Raya No. 123",
+			City:    "Jakarta",
+			State:   "DKI Jakarta",
 		},
 	}
 
@@ -123,4 +126,71 @@ func (s *TransactionService) createPayment(ctx context.Context, transaction mode
 	default:
 		return nil, app.NewInternalServerError()
 	}
+}
+
+func (s *TransactionService) Get(ctx context.Context, transactionID string) (*model.Transaction, error) {
+	var transaction model.Transaction
+	err := s.db.Where("id = ?", transactionID).First(&transaction).Error
+	if err != nil {
+		return nil, err
+	}
+
+	if transaction.Payment.Status != payment.PaymentStatusSuccess {
+		var p *payment.Payment
+
+		switch transaction.Payment.Provider {
+		case payment.PaymentProviderXendit:
+			p, err = s.xenditPayment.GetPayment(ctx, transaction.Payment.ID)
+			if err != nil {
+				return nil, err
+			}
+		default:
+			logrus.Errorf("payment provider not supported: %s", transaction.Payment.Provider)
+			return nil, app.NewBadRequestError("payment provider not supported")
+		}
+
+		if p == nil {
+			logrus.Errorf("payment not found: %s", transaction.Payment.ID)
+			return nil, app.NewNotFoundError("payment not found")
+		}
+
+		if p.Status != transaction.Payment.Status {
+			transaction.Payment.Status = p.Status
+			transaction.Payment.UpdatedAt = p.UpdatedAt
+
+			switch p.Status {
+			case payment.PaymentStatusSuccess:
+				transaction.Status = model.TransactionStatusSuccess
+			case payment.PaymentStatusFailed:
+				transaction.Status = model.TransactionStatusFailed
+			case payment.PaymentStatusPending:
+				transaction.Status = model.TransactionStatusPending
+			default:
+				transaction.Status = model.TransactionStatusFailed
+			}
+		}
+
+		transaction.Payment = model.TransactionPayment{
+			ID:            p.ID,
+			TransactionID: p.TransactionID,
+			Type:          p.Type,
+			Method:        p.Method,
+			Code:          p.Code,
+			Status:        p.Status,
+			Amount:        p.Amount,
+			Currency:      p.Currency,
+			Provider:      p.Provider,
+			URL:           p.URL,
+			CreatedAt:     p.CreatedAt,
+			UpdatedAt:     p.UpdatedAt,
+		}
+
+		err = s.db.Save(&transaction).Error
+		if err != nil {
+			logrus.Errorf("gorm failed to update transaction: %v", err)
+			return nil, app.NewInternalServerError()
+		}
+	}
+
+	return &transaction, nil
 }
