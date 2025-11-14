@@ -194,3 +194,12 @@ func (s *TransactionService) Get(ctx context.Context, transactionID string) (*mo
 
 	return &transaction, nil
 }
+
+func (s *TransactionService) Update(ctx context.Context, transaction *model.Transaction) error {
+	err := s.db.Save(&transaction).Error
+	if err != nil {
+		logrus.Errorf("gorm failed to update transaction: %v", err)
+		return app.NewInternalServerError()
+	}
+	return nil
+}

@@ -44,3 +44,7 @@ func NewConflictError(message string) *AppError {
 func NewValidationFailedError(message string) *AppError {
 	return NewAppError(http.StatusUnprocessableEntity, message)
 }
+
+func NewForbiddenError(message string) *AppError {
+	return NewAppError(http.StatusForbidden, message)
+}
