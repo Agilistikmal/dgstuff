@@ -1,21 +1,16 @@
-package main
+package api
 
 import (
-	"fmt"
-
 	"github.com/agilistikmal/dgstuff/internal/app"
-	"github.com/agilistikmal/dgstuff/internal/config"
 	"github.com/agilistikmal/dgstuff/internal/http/handler"
-	"github.com/agilistikmal/dgstuff/internal/http/middleware"
+	"github.com/agilistikmal/dgstuff/internal/pkg/payment/xendit_payment"
 	"github.com/agilistikmal/dgstuff/internal/service"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/spf13/viper"
 )
 
-func main() {
-	config.LoadConfig()
-
+func Run() *fiber.App {
 	db := app.NewDatabase(viper.GetString("database.provider"), viper.GetString("database.url"))
 	validator := app.NewValidator()
 
@@ -28,23 +23,23 @@ func main() {
 		AllowMethods: "GET, POST, PUT, DELETE, OPTIONS",
 	}))
 
+	xenditPayment := xendit_payment.NewXenditPayment(viper.GetString("payment.provider.xendit.api_key"))
+
 	stuffService := service.NewStuffService(db, validator)
 	stuffHandler := handler.NewStuffHandler(stuffService)
 	stuffHandler.InitRoutes(app)
 
-	host := "0.0.0.0"
-	port := viper.GetInt("server.port")
-	if port == 0 {
-		port = 8080
-	}
-	addr := fmt.Sprintf("%s:%d", host, port)
+	stockService := service.NewStockService(db, validator)
+	stockHandler := handler.NewStockHandler(stockService)
+	stockHandler.InitRoutes(app)
 
-	fmt.Printf("--------------------------------\n")
-	fmt.Printf("Starting server on %s\n", addr)
-	fmt.Printf("Frontend URL: http://%s\n", addr)
-	fmt.Printf("Backend API URL: http://%s/api\n", addr)
-	fmt.Printf("--------------------------------\n")
+	transactionService := service.NewTransactionService(db, validator, xenditPayment)
+	transactionHandler := handler.NewTransactionHandler(transactionService)
+	transactionHandler.InitRoutes(app)
 
-	app.Use(middleware.NewInvalidMiddleware().Handle)
-	app.Listen(fmt.Sprintf(":%d", port))
+	callbackService := service.NewCallbackService(transactionService)
+	callbackHandler := handler.NewCallbackHandler(callbackService)
+	callbackHandler.InitRoutes(app)
+
+	return app
 }
