@@ -29,6 +29,7 @@ func (p *Paginated[T]) GetOffset() int {
 func (p *Paginated[T]) CalculateMetadata(totalItems int64) {
 	totalPages := int(math.Ceil(float64(totalItems) / float64(p.Limit)))
 	p.TotalPages = int(totalPages)
+	p.TotalItems = int(totalItems)
 	p.HasNext = p.Page < int(totalPages)
 	p.HasPrevious = p.Page > 1
 }
