@@ -1,3 +1,11 @@
+app:
+  # App name
+  name: "DGStuff"
+  # App description
+  description: "DGStuff is a platform for selling digital goods"
+  # App logo URL
+  logo_url: "https://dgstuff.com/logo.png"
+
 database:
   # Database provider. supported: sqlite, mysql, postgres
   provider: sqlite

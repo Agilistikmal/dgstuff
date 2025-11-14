@@ -1,12 +1,12 @@
 <script>
-  import Footer from './lib/components/Footer.svelte';
-  import Navbar from './lib/components/Navbar.svelte'
+  import { Route, Router } from "svelte-routing";
+  import HomePage from "./pages/HomePage.svelte";
+
+  export let url = "";
 </script>
 
-<main>
-  <Navbar />
-  <div class="min-h-screen">
-    <slot />
-  </div>
-  <Footer />
-</main>
+<Router {url}>
+  <Route path="/">
+    <HomePage />
+  </Route>
+</Router>

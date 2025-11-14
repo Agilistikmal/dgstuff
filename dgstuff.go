@@ -12,6 +12,7 @@ import (
 	"github.com/agilistikmal/dgstuff/internal/config"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/filesystem"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
@@ -57,5 +58,7 @@ func main() {
 	fmt.Printf("Backend API URL: http://%s/api\n", addr)
 	fmt.Printf("--------------------------------\n")
 
-	app.Listen(fmt.Sprintf(":%d", port))
+	if err := app.Listen(fmt.Sprintf(":%d", port)); err != nil {
+		logrus.Fatalf("failed to start server: %v", err)
+	}
 }

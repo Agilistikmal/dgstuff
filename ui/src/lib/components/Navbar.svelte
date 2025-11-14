@@ -1,4 +1,5 @@
 <script>
+  import { Link } from "svelte-routing";
   import Logo from "./Logo.svelte";
 
 </script>
@@ -6,19 +7,19 @@
 <nav class="sticky top-0 z-50 w-full bg-white/5 backdrop-blur-sm">
   <div class="container mx-auto px-4 py-4">
     <div class="flex justify-between items-center">
-      <a href="/">
+      <Link to="/">
         <Logo />
-      </a>
+      </Link>
       <div class="flex items-center gap-x-8">
-        <a href="/">
+        <Link to="/">
           <span>Home</span>
-        </a>
-        <a href="/#stuffs">
+        </Link>
+        <Link to="/#stuffs">
           <span>Stuffs</span>
-        </a>
-        <a href="/#contact">
+        </Link>
+        <Link to="/#contact">
           <span>Contact</span>
-        </a>
+        </Link>
       </div>
     </div>
   </div>
