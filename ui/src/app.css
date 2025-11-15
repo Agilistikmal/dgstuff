@@ -16,4 +16,21 @@
     background-color: var(--color-white);
     color: var(--color-black);
   }
+
+  button {
+    @apply cursor-pointer;
+  }
+
+  input {
+    @apply outline-none focus:outline-none;
+  }
+
+  textarea {
+    @apply outline-none;
+  }
+
+  select {
+    @apply outline-none;
+  }
+  
 }

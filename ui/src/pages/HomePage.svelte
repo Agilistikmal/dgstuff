@@ -41,14 +41,7 @@
   {#if appInfo}
     <!-- Hero -->
     <div class="min-h-[25vh] flex flex-col justify-center items-start">
-      <div class="flex items-end gap-2">
-        <h1 class="text-7xl font-black tracking-tighter">{appInfo.name}</h1>
-        <p
-          class="text-sm text-brand px-3 py-1 bg-brand/10 rounded-full font-medium"
-        >
-          {appInfo.version}
-        </p>
-      </div>
+      <h1 class="text-7xl font-black tracking-tighter">{appInfo.name}</h1>
       <h2 class="text-3xl font-medium">{appInfo.description}</h2>
       <img
         src={appInfo.logo_url}
@@ -82,11 +75,21 @@
             to={`/stuff/${stuff.slug}`}
             class="rounded-lg overflow-hidden shadow-sm hover:shadow-xl transition-shadow duration-300"
           >
-            <img
-              src={StuffApi.getFirstMedia(stuff.medias, "image")}
-              alt={stuff.name}
-              class="w-full h-48 object-cover bg-gray-300 flex items-center justify-center"
-            />
+            {@const firstMedia = StuffApi.getFirstMedia(stuff.medias)}
+            <div
+              class="h-48 w-full object-cover overflow-hidden bg-gray-300 flex items-center justify-center"
+            >
+              {#if firstMedia?.type === "image"}
+                <img src={firstMedia.url} alt={stuff.name} />
+              {:else if firstMedia?.type === "video"}
+                <video src={firstMedia.url} autoplay muted loop></video>
+              {:else}
+                <div>
+                  <span class="text-gray-500">No media</span>
+                </div>
+              {/if}
+            </div>
+
             <div class="p-4">
               <h3 class="text-lg font-medium">{stuff.name}</h3>
               <div class="flex items-center gap-2">

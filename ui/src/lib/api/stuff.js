@@ -13,8 +13,21 @@ export class StuffApi {
     return response;
   }
 
-  static getFirstMedia(medias, mediaType = "image") {
+  static getFirstMedia(medias, mediaType = null) {
     if (!medias) return null;
-    return medias.find((media) => media.type === mediaType)?.url;
+    if (mediaType) {
+      return medias.find((media) => media.type === mediaType);
+    }
+    return medias[0];
+  }
+
+  static async getBySlug(slug) {
+    const response = await sendRequest(
+      `${this.basePath}/${slug}`,
+      {
+        method: "GET",
+      }
+    );
+    return response;
   }
 }
