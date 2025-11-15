@@ -23,7 +23,6 @@ type Stuff struct {
 }
 
 func (s *Stuff) AfterFind(tx *gorm.DB) error {
-	s.Stock.Count = s.Stock.CountValues()
 	s.Stock.Values = ""
 	return nil
 }
