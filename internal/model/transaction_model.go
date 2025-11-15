@@ -66,7 +66,6 @@ type TransactionPayment struct {
 type TransactionCreateDTO struct {
 	Email           string                      `json:"email" validate:"required,email"`
 	Currency        string                      `json:"currency" validate:"required,oneof=USD IDR"`
-	Status          string                      `json:"status" validate:"required,oneof=pending success failed"`
 	Stuffs          []TransactionStuffCreateDTO `json:"stuffs" validate:"required,max=10"`
 	PaymentProvider payment.PaymentProvider     `json:"payment_provider" validate:"required,oneof=xendit midtrans paypal stripe"`
 }

@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"strconv"
+	"strings"
 
 	"github.com/agilistikmal/dgstuff/internal/app"
 	"github.com/agilistikmal/dgstuff/internal/model"
@@ -41,7 +42,7 @@ func (s *TransactionService) Create(ctx context.Context, dto model.TransactionCr
 		ID:       id,
 		Email:    dto.Email,
 		Currency: model.Currency(dto.Currency),
-		Status:   model.TransactionStatus(dto.Status),
+		Status:   model.TransactionStatusPending,
 	}
 
 	for _, stuff := range dto.Stuffs {
@@ -52,6 +53,39 @@ func (s *TransactionService) Create(ctx context.Context, dto model.TransactionCr
 			logrus.Errorf("gorm failed to find stuff by id: %v", err)
 			return nil, app.NewInternalServerError()
 		}
+
+		var findStock model.Stock
+		err = tx.Where("stuff_id = ?", stuff.StuffID).First(&findStock).Error
+		if err != nil {
+			tx.Rollback()
+			logrus.Errorf("gorm failed to find stock by stuff id: %v", err)
+			return nil, app.NewInternalServerError()
+		}
+
+		decryptedStockValues, err := pkg.Decrypt(findStock.Values, viper.GetString("stock.secret_key"))
+		if err != nil {
+			tx.Rollback()
+			logrus.Errorf("failed to decrypt stock values: %v", err)
+			return nil, app.NewInternalServerError()
+		}
+		stockValues := strings.Split(decryptedStockValues, findStock.Separator)
+		if len(stockValues) < stuff.Quantity {
+			tx.Rollback()
+			logrus.Errorf("stock not enough: %v", stuff.Quantity)
+			return nil, app.NewBadRequestError("stock not enough")
+		}
+
+		selectedStockValue := stockValues[0:stuff.Quantity]
+		encryptedSelectedStockValue, err := pkg.Encrypt(strings.Join(selectedStockValue, findStock.Separator), viper.GetString("stock.secret_key"))
+		if err != nil {
+			tx.Rollback()
+			logrus.Errorf("failed to encrypt selected stock value: %v", err)
+			return nil, app.NewInternalServerError()
+		}
+		transactionStuffData := model.TransactionStuffData{
+			Values:    encryptedSelectedStockValue,
+			Separator: findStock.Separator,
+		}
 		transaction.Stuffs = append(transaction.Stuffs, model.TransactionStuff{
 			StuffID:    stuff.StuffID,
 			Quantity:   stuff.Quantity,
@@ -60,9 +94,25 @@ func (s *TransactionService) Create(ctx context.Context, dto model.TransactionCr
 			StuffPrice: findStuff.Price,
 			Currency:   findStuff.Currency,
 			TotalPrice: findStuff.Price * float64(stuff.Quantity),
-			Data:       nil,
+			Data:       &transactionStuffData,
 		})
 		transaction.Amount += findStuff.Price * float64(stuff.Quantity)
+
+		remainingStockValues := stockValues[stuff.Quantity:]
+		encryptedRemainingStockValues, err := pkg.Encrypt(strings.Join(remainingStockValues, findStock.Separator), viper.GetString("stock.secret_key"))
+		if err != nil {
+			tx.Rollback()
+			logrus.Errorf("failed to encrypt remaining stock values: %v", err)
+			return nil, app.NewInternalServerError()
+		}
+		findStock.Count -= stuff.Quantity
+		findStock.Values = encryptedRemainingStockValues
+		err = tx.Save(&findStock).Error
+		if err != nil {
+			tx.Rollback()
+			logrus.Errorf("gorm failed to update stock: %v", err)
+			return nil, app.NewInternalServerError()
+		}
 	}
 
 	payment, err := s.createPayment(ctx, transaction, dto.PaymentProvider)

@@ -88,7 +88,6 @@ func TestTransactionHandler_CreateSuccess(t *testing.T) {
 		{
 			"email": "test@example.com",
 			"currency": "IDR",
-			"status": "pending",
 			"stuffs": [
 				{
 					"stuff_id": ` + strconv.Itoa(stuff.ID) + `,

@@ -96,7 +96,6 @@ func TestCallbackHandler_HandleCallbackSuccess(t *testing.T) {
 	transactionDTO := model.TransactionCreateDTO{
 		Email:    "test@example.com",
 		Currency: "IDR",
-		Status:   "pending",
 		Stuffs: []model.TransactionStuffCreateDTO{
 			{
 				StuffID:  stuff.ID,

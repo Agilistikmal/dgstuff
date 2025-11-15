@@ -7,6 +7,7 @@
   import Autoplay from "embla-carousel-autoplay";
   import Icon from "@iconify/svelte";
   import { Link } from "svelte-routing";
+  import { TransactionApi } from "../lib/api/transaction";
 
   let { slug } = $props();
 
@@ -27,7 +28,39 @@
     }
   });
 
+  let email = $state(localStorage.getItem("email") || "");
   let quantity = $state(1);
+  let formLoading = $state(false);
+  let formError = $state(undefined);
+
+  let handleCheckout = async (e) => {
+    e.preventDefault();
+
+    try {
+      formLoading = true;
+      formError = undefined;
+      const payload = {
+        email: email,
+        currency: "IDR",
+        stuffs: [
+          {
+            stuff_id: stuff.id,
+            quantity: quantity,
+          },
+        ],
+        payment_provider: "xendit",
+      };
+      localStorage.setItem("email", email);
+
+      const response = await TransactionApi.create(payload);
+      console.log(response);
+    } catch (err) {
+      console.error(err);
+      formError = err.message;
+    } finally {
+      formLoading = false;
+    }
+  };
 </script>
 
 <Navbar />
@@ -41,7 +74,7 @@
   {/if}
 
   {#if error}
-    <div class="flex justify-center items-center h-screen">
+    <div>
       <span class="text-red-500">{error}</span>
     </div>
   {/if}
@@ -109,7 +142,10 @@
         <div class="flex items-center gap-4 justify-between mt-4">
           <div>
             {#if stock > 0}
-              <span class="text-xl text-green-500">{stock} items left</span>
+              <span class="text-xl text-gray">
+                <span class="text-brand font-medium">{stock}</span>
+                in stock
+              </span>
             {:else}
               <span class="text-xl text-red-500 font-bold">Out of Stock</span>
             {/if}
@@ -123,8 +159,22 @@
             </span>
           </div>
         </div>
-        <form>
-          <div class="mt-4">
+        <form method="POST" onsubmit={handleCheckout} class="mt-4">
+          <div class="mt-2">
+            <label for="email" class="block font-medium text-gray-700"
+              >Email</label
+            >
+            <input
+              type="email"
+              id="email"
+              name="email"
+              placeholder="Email"
+              required
+              bind:value={email}
+              class="w-full border border-gray-300 rounded-lg p-2"
+            />
+          </div>
+          <div class="mt-2">
             <label for="quantity" class="block font-medium text-gray-700"
               >Quantity</label
             >
@@ -144,7 +194,7 @@
                 name="quantity"
                 placeholder="1"
                 required
-                value={quantity}
+                bind:value={quantity}
                 min="1"
                 max={stock}
                 class="flex-1 border border-gray-300 rounded-lg p-2"
@@ -161,10 +211,22 @@
             </div>
           </div>
           <div class="mt-4">
+            {#if formError}
+              <div class="text-red-500 mb-2">{formError}</div>
+            {/if}
             <button
+              type="submit"
               class="border border-brand text-brand rounded-lg px-5 py-2 w-full"
+              disabled={formLoading}
+              aria-disabled={formLoading}
             >
-              Buy Now
+              {#if formLoading}
+                <div
+                  class="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-brand"
+                ></div>
+              {:else}
+                Buy Now
+              {/if}
             </button>
           </div>
         </form>

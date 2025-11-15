@@ -3,6 +3,9 @@ package model
 import (
 	"strings"
 	"time"
+
+	"github.com/agilistikmal/dgstuff/internal/pkg"
+	"github.com/spf13/viper"
 )
 
 type Stock struct {
@@ -15,7 +18,11 @@ type Stock struct {
 }
 
 func (s *Stock) CountValues() int {
-	return len(strings.Split(s.Values, s.Separator))
+	decryptedValues, err := pkg.Decrypt(s.Values, viper.GetString("stock.secret_key"))
+	if err != nil {
+		return 0
+	}
+	return len(strings.Split(decryptedValues, s.Separator))
 }
 
 // DTO

@@ -40,7 +40,7 @@ func NewDatabase(provider string, url string) *gorm.DB {
 	err = db.AutoMigrate(
 		&model.Stuff{}, &model.StuffCategory{}, &model.StuffMedia{},
 		&model.Stock{},
-		&model.Transaction{}, &model.TransactionStuff{}, &model.TransactionPayment{},
+		&model.Transaction{}, &model.TransactionStuff{}, &model.TransactionStuffData{}, &model.TransactionPayment{},
 		&model.AppInfo{},
 	)
 	if err != nil {

@@ -7,10 +7,10 @@
 </script>
 
 <Router {url}>
-  <Route path="/">
-    <HomePage />
-  </Route>
   <Route path="/stuff/:slug" let:params>
     <StuffPage slug={params.slug} />
+  </Route>
+  <Route path="/">
+    <HomePage />
   </Route>
 </Router>

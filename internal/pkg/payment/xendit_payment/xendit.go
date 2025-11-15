@@ -21,6 +21,7 @@ func NewXenditPayment(apiKey string) payment.PaymentService {
 }
 
 func (p *XenditPayment) CreateInvoice(ctx context.Context, request payment.PaymentInvoiceRequest) (*payment.Payment, error) {
+	shouldSendEmail := false
 	invReq := invoice.CreateInvoiceRequest{
 		ExternalId: request.TransactionID,
 		Amount:     request.Amount,
@@ -30,6 +31,7 @@ func (p *XenditPayment) CreateInvoice(ctx context.Context, request payment.Payme
 			GivenNames:  *invoice.NewNullableString(&request.Customer.Name),
 			PhoneNumber: *invoice.NewNullableString(&request.Customer.Phone),
 		},
+		ShouldSendEmail: &shouldSendEmail,
 	}
 	expirationTime := viper.GetDuration("payment.expiration_time")
 	expirationTimeFloat := float32(expirationTime.Seconds())

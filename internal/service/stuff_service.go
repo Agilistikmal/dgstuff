@@ -91,7 +91,7 @@ func (s *StuffService) Create(ctx context.Context, dto model.StuffCreateDTO) (*m
 
 func (s *StuffService) GetBySlug(ctx context.Context, slug string) (*model.Stuff, error) {
 	var stuff model.Stuff
-	err := s.db.Preload("Categories").Preload("Medias").Where("slug = ?", slug).First(&stuff).Error
+	err := s.db.Preload("Categories").Preload("Medias").Preload("Stock").Where("slug = ?", slug).First(&stuff).Error
 	if err != nil {
 		return nil, app.NewNotFoundError("stuff not found")
 	}
@@ -102,9 +102,13 @@ func (s *StuffService) GetAll(ctx context.Context, page int, limit int) (*pagina
 	p := paginated.NewPaginated[model.Stuff](page, limit)
 
 	var stuffs []model.Stuff
-	err := s.db.Preload("Categories").Preload("Medias").Offset(p.GetOffset()).Limit(limit).Find(&stuffs).Error
+	err := s.db.Preload("Categories").Preload("Medias").Preload("Stock").Offset(p.GetOffset()).Limit(limit).Find(&stuffs).Error
 	if err != nil {
 		return nil, app.NewInternalServerError()
+	}
+	for _, stuff := range stuffs {
+		stuff.Stock.Count = stuff.Stock.CountValues()
+		stuff.Stock.Values = ""
 	}
 	p.Data = stuffs
 
@@ -126,9 +130,13 @@ func (s *StuffService) GetByCategory(ctx context.Context, categoryID int, page i
 		Where("stuff_category_relation.category_id = ?", categoryID)
 
 	var stuffs []model.Stuff
-	err := baseQuery.Preload("Categories").Preload("Medias").Offset(p.GetOffset()).Limit(limit).Find(&stuffs).Error
+	err := baseQuery.Preload("Categories").Preload("Medias").Preload("Stock").Offset(p.GetOffset()).Limit(limit).Find(&stuffs).Error
 	if err != nil {
 		return nil, app.NewInternalServerError()
+	}
+	for _, stuff := range stuffs {
+		stuff.Stock.Count = stuff.Stock.CountValues()
+		stuff.Stock.Values = ""
 	}
 	p.Data = stuffs
 
