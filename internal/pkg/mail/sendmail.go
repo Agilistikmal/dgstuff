@@ -3,10 +3,9 @@ package mail
 import (
 	"bytes"
 	"errors"
-	"net/http"
+	"fmt"
 	"os/exec"
 	"text/template"
-	"time"
 )
 
 type SendMail struct {
@@ -39,30 +38,35 @@ func (s *SendMail) Send() error {
 		body = s.m.Body
 	}
 
-	headers := make(http.Header)
-	headers.Set("From", s.m.From)
-	headers.Set("To", s.m.To)
-	headers.Set("Subject", s.m.Subject)
-	headers.Set("MIME-Version", "1.0")
-	headers.Set("Content-Type", "text/html; charset=UTF-8")
-	headers.Set("Content-Transfer-Encoding", "8bit")
-	headers.Set("X-Mailer", "sendmail")
-	headers.Set("Date", time.Now().Format(time.RFC1123Z))
+	msg := fmt.Sprintf(
+		"From: %s\nTo: %s\nSubject: %s\nMIME-Version: 1.0\nContent-Type: text/html; charset=UTF-8\n\n%s",
+		s.m.From,
+		s.m.To,
+		s.m.Subject,
+		body,
+	)
 
-	var buffer bytes.Buffer
-	if err := headers.Write(&buffer); err != nil {
-		return err
-	}
-	if _, err := buffer.Write([]byte("\r\n")); err != nil {
-		return err
-	}
-	if _, err := buffer.Write([]byte(body)); err != nil {
+	cmd := exec.Command(sendmailPath, "-t")
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
 		return err
 	}
 
-	cmd := exec.Command(sendmailPath, s.m.To)
-	cmd.Stdin = &buffer
-	return cmd.Run()
+	if err := cmd.Start(); err != nil {
+		stdin.Close()
+		return err
+	}
+
+	_, err = stdin.Write([]byte(msg))
+	if err != nil {
+		stdin.Close()
+		cmd.Wait()
+		return err
+	}
+
+	stdin.Close()
+
+	return cmd.Wait()
 }
 
 func findSendmailPath() (string, error) {
@@ -75,7 +79,7 @@ func findSendmailPath() (string, error) {
 	for _, option := range options {
 		path, err := exec.LookPath(option)
 		if err == nil {
-			return path, err
+			return path, nil
 		}
 	}
 
