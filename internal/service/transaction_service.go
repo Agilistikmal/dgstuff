@@ -143,6 +143,13 @@ func (s *TransactionService) Create(ctx context.Context, dto model.TransactionCr
 		return nil, app.NewInternalServerError()
 	}
 
+	err = tx.Commit().Error
+	if err != nil {
+		tx.Rollback()
+		logrus.Errorf("gorm failed to commit transaction: %v", err)
+		return nil, app.NewInternalServerError()
+	}
+
 	return &transaction, nil
 }
 
@@ -178,9 +185,9 @@ func (s *TransactionService) createPayment(ctx context.Context, transaction mode
 	}
 }
 
-func (s *TransactionService) Get(ctx context.Context, transactionID string) (*model.Transaction, error) {
+func (s *TransactionService) Get(ctx context.Context, transactionID string, token string) (*model.Transaction, error) {
 	var transaction model.Transaction
-	err := s.db.Where("id = ?", transactionID).First(&transaction).Error
+	err := s.db.Preload("Payment").Preload("Stuffs.Data").Where("id = ?", transactionID).First(&transaction).Error
 	if err != nil {
 		return nil, err
 	}
@@ -216,7 +223,8 @@ func (s *TransactionService) Get(ctx context.Context, transactionID string) (*mo
 			case payment.PaymentStatusPending:
 				transaction.Status = model.TransactionStatusPending
 			default:
-				transaction.Status = model.TransactionStatusFailed
+				logrus.Errorf("payment status not supported: %s", p.Status)
+				return nil, app.NewBadRequestError("payment status not supported")
 			}
 		}
 
@@ -231,6 +239,7 @@ func (s *TransactionService) Get(ctx context.Context, transactionID string) (*mo
 			Currency:      p.Currency,
 			Provider:      p.Provider,
 			URL:           p.URL,
+			ExpiresAt:     p.ExpiresAt,
 			CreatedAt:     p.CreatedAt,
 			UpdatedAt:     p.UpdatedAt,
 		}
@@ -239,6 +248,29 @@ func (s *TransactionService) Get(ctx context.Context, transactionID string) (*mo
 		if err != nil {
 			logrus.Errorf("gorm failed to update transaction: %v", err)
 			return nil, app.NewInternalServerError()
+		}
+	}
+
+	if transaction.Payment.Status != payment.PaymentStatusSuccess {
+		var newStuffs []model.TransactionStuff
+		for _, stuff := range transaction.Stuffs {
+			stuff.Data = nil
+			newStuffs = append(newStuffs, stuff)
+		}
+		transaction.Stuffs = newStuffs
+	} else {
+		if token != "" {
+			for _, stuff := range transaction.Stuffs {
+				if stuff.Data == nil {
+					continue
+				}
+				decryptedStockValues, err := pkg.Decrypt(stuff.Data.Values, viper.GetString("stock.secret_key"))
+				if err != nil {
+					logrus.Errorf("failed to decrypt stock values: %v", err)
+					return nil, app.NewInternalServerError()
+				}
+				stuff.Data.Values = decryptedStockValues
+			}
 		}
 	}
 

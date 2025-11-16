@@ -58,7 +58,7 @@ func (s *CallbackService) handleXenditCallback(ctx context.Context, payload map[
 		return app.NewForbiddenError("invalid callback token")
 	}
 
-	transaction, err := s.transactionService.Get(ctx, invoiceCallback.ExternalId)
+	transaction, err := s.transactionService.Get(ctx, invoiceCallback.ExternalId, "")
 	if err != nil {
 		logrus.Errorf("failed to get transaction: %v", err)
 		return err

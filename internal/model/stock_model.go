@@ -18,6 +18,10 @@ type Stock struct {
 }
 
 func (s *Stock) CountValues() int {
+	if s.Values == "" {
+		return 0
+	}
+
 	decryptedValues, err := pkg.Decrypt(s.Values, viper.GetString("stock.secret_key"))
 	if err != nil {
 		return 0

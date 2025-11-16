@@ -17,6 +17,13 @@
     color: var(--color-black);
   }
 
+  * {
+    scroll-behavior: smooth;
+    scroll-snap-align: start;
+    scroll-snap-type: y mandatory;
+    scroll-padding-top: 100px;
+  }
+
   button {
     @apply cursor-pointer;
   }
@@ -32,5 +39,4 @@
   select {
     @apply outline-none;
   }
-  
 }

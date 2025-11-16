@@ -5,6 +5,7 @@
   import { StuffApi } from "../lib/api/stuff.js";
   import { onMount } from "svelte";
   import { Link } from "svelte-routing";
+  import Loading from "../lib/components/Loading.svelte";
 
   let loading = $state(true);
   let error = $state(undefined);
@@ -29,13 +30,21 @@
   });
 </script>
 
+<svelte:head>
+  <title>{appInfo?.name}</title>
+  <meta name="description" content={appInfo?.description} />
+  <meta name="keywords" content={appInfo?.description.split(" ").join(",")} />
+</svelte:head>
+
 <Navbar />
 <div class="min-h-screen container mx-auto p-4 pb-24">
   {#if loading}
-    <p>Loading...</p>
+    <Loading />
   {/if}
   {#if error}
-    <p>Error loading app info</p>
+    <div>
+      <span class="text-red-500">{error}</span>
+    </div>
   {/if}
 
   {#if appInfo}

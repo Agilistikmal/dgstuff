@@ -39,7 +39,8 @@ func (h *TransactionHandler) Create(c *fiber.Ctx) error {
 
 func (h *TransactionHandler) Get(c *fiber.Ctx) error {
 	transactionID := c.Params("id")
-	transaction, err := h.transactionService.Get(c.Context(), transactionID)
+	token := c.Get("X-Transaction-Token")
+	transaction, err := h.transactionService.Get(c.Context(), transactionID, token)
 	if err != nil {
 		return response.Error(c, err)
 	}

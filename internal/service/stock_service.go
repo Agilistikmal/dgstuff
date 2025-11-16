@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"strings"
 
 	"github.com/agilistikmal/dgstuff/internal/app"
 	"github.com/agilistikmal/dgstuff/internal/model"
@@ -50,6 +51,7 @@ func (s *StockService) Update(ctx context.Context, stuffID int, dto model.StockU
 		StuffID:   stuffID,
 		Values:    encryptedValues,
 		Separator: dto.Separator,
+		Count:     len(strings.Split(dto.Values, dto.Separator)),
 	}
 
 	err = tx.Save(&stock).Error

@@ -10,7 +10,7 @@
   });
 </script>
 
-<nav class="sticky top-0 z-50 w-full bg-white/5 backdrop-blur-sm">
+<nav class="w-full bg-white/5 backdrop-blur-sm">
   <div class="container mx-auto px-4 py-4">
     <div class="flex justify-between items-center">
       <Link to="/">
@@ -28,10 +28,10 @@
         <Link to="/">
           <span>Home</span>
         </Link>
-        <Link to="/#stuffs">
+        <a href="/#stuffs">
           <span>Stuffs</span>
-        </Link>
-        <Link to="/#contact">
+        </a>
+        <Link to="/contact">
           <span>Contact</span>
         </Link>
       </div>

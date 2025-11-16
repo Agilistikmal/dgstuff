@@ -14,9 +14,12 @@ export class TransactionApi {
     return response;
   }
 
-  static async get(id) {
+  static async get(id, token = "") {
     const response = await sendRequest(`${this.basePath}/${id}`, {
       method: "GET",
+      headers: {
+        "X-Transaction-Token": token,
+      },
     });
     return response;
   }

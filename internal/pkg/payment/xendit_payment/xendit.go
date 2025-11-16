@@ -75,6 +75,7 @@ func (p *XenditPayment) CreateInvoice(ctx context.Context, request payment.Payme
 		UpdatedAt: inv.Updated,
 		Type:      payment.PaymentTypeRedirect,
 		URL:       inv.InvoiceUrl,
+		ExpiresAt: inv.ExpiryDate,
 	}
 
 	return &payment, nil
@@ -85,6 +86,21 @@ func (p *XenditPayment) GetPayment(ctx context.Context, paymentID string) (*paym
 		Execute()
 	if err != nil {
 		return nil, err
+	}
+
+	var status payment.PaymentStatus
+	switch inv.Status {
+	case "PAID":
+		status = payment.PaymentStatusSuccess
+	case "EXPIRED":
+		status = payment.PaymentStatusFailed
+	case "FAILED":
+		status = payment.PaymentStatusFailed
+	case "PENDING":
+		status = payment.PaymentStatusPending
+	default:
+		logrus.Errorf("invalid invoice status: %s", inv.Status)
+		return nil, app.NewBadRequestError("invalid invoice status")
 	}
 
 	return &payment.Payment{
@@ -98,10 +114,11 @@ func (p *XenditPayment) GetPayment(ctx context.Context, paymentID string) (*paym
 			Email: *inv.Customer.Email.Get(),
 			Phone: *inv.Customer.PhoneNumber.Get(),
 		},
-		Status:    payment.PaymentStatus(inv.Status),
+		Status:    status,
 		CreatedAt: inv.Created,
 		UpdatedAt: inv.Updated,
 		Type:      payment.PaymentTypeRedirect,
 		URL:       inv.InvoiceUrl,
+		ExpiresAt: inv.ExpiryDate,
 	}, nil
 }

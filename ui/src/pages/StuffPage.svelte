@@ -6,8 +6,9 @@
   import emblaCarouselSvelte from "embla-carousel-svelte";
   import Autoplay from "embla-carousel-autoplay";
   import Icon from "@iconify/svelte";
-  import { Link } from "svelte-routing";
+  import { Link, navigate } from "svelte-routing";
   import { TransactionApi } from "../lib/api/transaction";
+  import Loading from "../lib/components/Loading.svelte";
 
   let { slug } = $props();
 
@@ -53,7 +54,10 @@
       localStorage.setItem("email", email);
 
       const response = await TransactionApi.create(payload);
-      console.log(response);
+      if (!response.id) {
+        throw new Error("Failed to create transaction");
+      }
+      navigate(`/trx/${response.id}`);
     } catch (err) {
       console.error(err);
       formError = err.message;
@@ -63,14 +67,16 @@
   };
 </script>
 
+<svelte:head>
+  <title>{stuff?.name}</title>
+  <meta name="description" content={stuff?.description} />
+  <meta name="keywords" content={stuff?.description.split(" ").join(",")} />
+</svelte:head>
+
 <Navbar />
 <div class="min-h-screen container mx-auto p-4 pb-24">
   {#if loading}
-    <div class="flex justify-center items-center h-screen">
-      <div
-        class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand"
-      ></div>
-    </div>
+    <Loading />
   {/if}
 
   {#if error}
@@ -130,7 +136,19 @@
 
         <div class="mt-4">
           <h1 class="text-2xl font-bold">{stuff.name}</h1>
-          <p class="text-gray-500">{stuff.description}</p>
+          <div class="flex items-center gap-2">
+            {#each stuff.categories as category, index}
+              <span class="text-sm text-gray-500">{category.name}</span>
+              {#if index !== stuff.categories.length - 1}
+                <span class="text-xs text-accent">•</span>
+              {/if}
+            {/each}
+          </div>
+          <div
+            class="text-gray"
+            bind:innerHTML={stuff.description}
+            contenteditable="false"
+          ></div>
         </div>
       </div>
 
@@ -216,9 +234,9 @@
             {/if}
             <button
               type="submit"
-              class="border border-brand text-brand rounded-lg px-5 py-2 w-full"
-              disabled={formLoading}
-              aria-disabled={formLoading}
+              class="border border-brand text-brand rounded-lg px-5 py-2 w-full disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={formLoading || stock <= 0}
+              aria-disabled={formLoading || stock <= 0}
             >
               {#if formLoading}
                 <div
