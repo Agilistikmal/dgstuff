@@ -6,6 +6,7 @@
   import Loading from "../lib/components/Loading.svelte";
 
   let { id } = $props();
+  let token = $state("");
 
   let loading = $state(true);
   let error = $state(undefined);
@@ -15,9 +16,7 @@
     try {
       loading = true;
       error = undefined;
-      const token =
-        new URLSearchParams(window.location.search).get("token") || "";
-      console.log("Token:", token);
+      token = new URLSearchParams(window.location.search).get("token") || "";
       transaction = await TransactionApi.get(id, token);
       if (!transaction) {
         throw new Error(`Transaction with id ${id} not found`);
@@ -175,37 +174,41 @@
       </div>
 
       <!-- Stuff Values -->
-      <div class="flex items-center gap-2 w-full">
-        <hr class="flex-1 border-gray-300 my-2" />
-        <span class="text-gray-500">Your Purchased Stuff</span>
-        <hr class="flex-1 border-gray-300 my-2" />
-      </div>
-      <div class="w-full space-y-2">
-        {#each transaction.stuffs as stuff}
-          <div>
-            <h1 class="font-medium">{stuff.stuff_name}</h1>
-            <p class="text-sm text-gray-500">
-              Separator <span
-                class="font-bold text-brand bg-brand/10 px-2 rounded-lg"
-                >{stuff.data.separator}</span
+      {#if transaction.status === "success" && token !== ""}
+        <div class="flex items-center gap-2 w-full">
+          <hr class="flex-1 border-gray-300 my-2" />
+          <span class="text-gray-500">Your Purchased Stuff</span>
+          <hr class="flex-1 border-gray-300 my-2" />
+        </div>
+        <div class="w-full space-y-2">
+          {#each transaction.stuffs as stuff}
+            <div>
+              <h1 class="font-medium">{stuff.stuff_name}</h1>
+              <div class="flex items-center gap-2 justify-between">
+                <p class="text-sm text-gray-500">
+                  Separator <span
+                    class="font-bold text-brand bg-brand/10 px-2 rounded-lg"
+                    >{stuff.data.separator}</span
+                  >
+                </p>
+                <button
+                  class="text-sm text-gray-500 hover:text-gray-700"
+                  onclick={() => {
+                    copyToClipboard(stuff.data.values);
+                  }}
+                >
+                  {copied ? "Copied" : "Copy All"}
+                </button>
+              </div>
+              <div
+                class="mt-2 bg-gray-100 p-2 rounded-lg border border-gray-300 overflow-scroll"
               >
-            </p>
-            <div
-              class="mt-2 bg-gray-100 p-2 rounded-lg border border-gray-300 relative"
-            >
-              <code class="block">{stuff.data.values}</code>
-              <button
-                class="absolute top-2 right-2 text-sm text-gray-500 hover:text-gray-700"
-                onclick={() => {
-                  copyToClipboard(stuff.data.values);
-                }}
-              >
-                {copied ? "Copied" : "Copy"}
-              </button>
+                <code class="block">{stuff.data.values}</code>
+              </div>
             </div>
-          </div>
-        {/each}
-      </div>
+          {/each}
+        </div>
+      {/if}
     </div>
   {/if}
 </div>

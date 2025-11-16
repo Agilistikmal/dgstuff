@@ -90,11 +90,9 @@ func (p *XenditPayment) GetPayment(ctx context.Context, paymentID string) (*paym
 
 	var status payment.PaymentStatus
 	switch inv.Status {
-	case "PAID":
+	case "PAID", "SETTLED":
 		status = payment.PaymentStatusSuccess
-	case "EXPIRED":
-		status = payment.PaymentStatusFailed
-	case "FAILED":
+	case "EXPIRED", "FAILED":
 		status = payment.PaymentStatusFailed
 	case "PENDING":
 		status = payment.PaymentStatusPending
