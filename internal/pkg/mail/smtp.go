@@ -26,8 +26,8 @@ func (s *SMTP) Send() error {
 	message.SetHeader("Subject", s.m.Subject)
 
 	var body string
-	if s.m.Template != "" {
-		tmpl, err := template.ParseFiles(s.m.Template)
+	if s.m.TemplateName != TemplateNone {
+		tmpl, err := template.ParseFS(templates, string(s.m.TemplateName))
 		if err != nil {
 			return err
 		}

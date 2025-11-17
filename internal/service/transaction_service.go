@@ -149,11 +149,16 @@ func (s *TransactionService) Create(ctx context.Context, dto model.TransactionCr
 		"transaction_id": transaction.ID,
 	}, 0)
 	m := mail.NewMail(viper.GetBool("mail.smtp.enabled"), &mail.Mail{
-		From:    viper.GetString("mail.smtp.from"),
-		To:      transaction.Email,
-		Subject: "Invoice for your purchase",
-		Data:    mail.GenerateTransactionTemplateData(&transaction, token),
-	}, mail.TemplatePurchase)
+		Host:         viper.GetString("mail.smtp.host"),
+		Port:         viper.GetInt("mail.smtp.port"),
+		Username:     viper.GetString("mail.smtp.username"),
+		Password:     viper.GetString("mail.smtp.password"),
+		From:         viper.GetString("mail.smtp.from"),
+		To:           transaction.Email,
+		Subject:      "Invoice for your purchase",
+		Data:         mail.GenerateTransactionTemplateData(&transaction, token),
+		TemplateName: mail.TemplatePurchase,
+	})
 	go m.Send()
 
 	err = tx.Commit().Error

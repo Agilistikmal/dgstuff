@@ -1,4 +1,4 @@
-package templates
+package templ
 
 import (
 	"html/template"

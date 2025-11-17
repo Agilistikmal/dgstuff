@@ -2,52 +2,40 @@ package mail
 
 import (
 	"embed"
-	"fmt"
 	"time"
 
 	"github.com/agilistikmal/dgstuff/internal/model"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
 type Mail struct {
-	Host     string
-	Port     int
-	Username string
-	Password string
-	From     string
-	To       string
-	Subject  string
-	Body     string
-	Template string
-	Data     map[string]interface{}
+	Host         string
+	Port         int
+	Username     string
+	Password     string
+	From         string
+	To           string
+	Subject      string
+	Body         string
+	TemplateName TemplateName
+	Data         map[string]interface{}
 }
 
 type Mailer interface {
 	Send() error
 }
 
-//go:embed templates/*.html
+//go:embed templ
 var templates embed.FS
 
 type TemplateName string
 
 const (
 	TemplateNone     TemplateName = ""
-	TemplatePurchase TemplateName = "purchase"
+	TemplatePurchase TemplateName = "templ/purchase.html"
 )
 
-func NewMail(smtp bool, m *Mail, templateName TemplateName) Mailer {
-	if templateName != TemplateNone {
-		templatePath := fmt.Sprintf("templates/%s.html", templateName)
-		template, err := templates.ReadFile(templatePath)
-		if err != nil {
-			logrus.Errorf("failed to read template: %v", err)
-			return nil
-		}
-
-		m.Template = string(template)
-	}
+func NewMail(smtp bool, m *Mail) Mailer {
 	if smtp {
 		return NewSMTP(m)
 	}
