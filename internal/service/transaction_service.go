@@ -8,6 +8,7 @@ import (
 	"github.com/agilistikmal/dgstuff/internal/app"
 	"github.com/agilistikmal/dgstuff/internal/model"
 	"github.com/agilistikmal/dgstuff/internal/pkg"
+	"github.com/agilistikmal/dgstuff/internal/pkg/mail"
 	"github.com/agilistikmal/dgstuff/internal/pkg/payment"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -18,10 +19,11 @@ type TransactionService struct {
 	db            *gorm.DB
 	validator     *app.Validator
 	xenditPayment payment.PaymentService
+	tokenService  *TokenService
 }
 
-func NewTransactionService(db *gorm.DB, validator *app.Validator, xenditPayment payment.PaymentService) *TransactionService {
-	return &TransactionService{db: db, validator: validator, xenditPayment: xenditPayment}
+func NewTransactionService(db *gorm.DB, validator *app.Validator, xenditPayment payment.PaymentService, tokenService *TokenService) *TransactionService {
+	return &TransactionService{db: db, validator: validator, xenditPayment: xenditPayment, tokenService: tokenService}
 }
 
 func (s *TransactionService) Create(ctx context.Context, dto model.TransactionCreateDTO) (*model.Transaction, error) {
@@ -143,6 +145,17 @@ func (s *TransactionService) Create(ctx context.Context, dto model.TransactionCr
 		return nil, app.NewInternalServerError()
 	}
 
+	token := s.tokenService.GenerateToken(map[string]any{
+		"transaction_id": transaction.ID,
+	}, 0)
+	m := mail.NewMail(viper.GetBool("mail.smtp.enabled"), &mail.Mail{
+		From:    viper.GetString("mail.smtp.from"),
+		To:      transaction.Email,
+		Subject: "Invoice for your purchase",
+		Data:    mail.GenerateTransactionTemplateData(&transaction, token),
+	}, mail.TemplatePurchase)
+	go m.Send()
+
 	err = tx.Commit().Error
 	if err != nil {
 		tx.Rollback()
@@ -186,6 +199,17 @@ func (s *TransactionService) createPayment(ctx context.Context, transaction mode
 }
 
 func (s *TransactionService) Get(ctx context.Context, transactionID string, token string) (*model.Transaction, error) {
+	isTokenValid := false
+	if token != "" {
+		claims, err := s.tokenService.VerifyToken(token)
+		if err != nil {
+			return nil, err
+		}
+		if claims["data"].(map[string]any)["transaction_id"] == transactionID {
+			isTokenValid = true
+		}
+	}
+
 	var transaction model.Transaction
 	err := s.db.Preload("Payment").Preload("Stuffs.Data").Where("id = ?", transactionID).First(&transaction).Error
 	if err != nil {
@@ -259,7 +283,7 @@ func (s *TransactionService) Get(ctx context.Context, transactionID string, toke
 		}
 		transaction.Stuffs = newStuffs
 	} else {
-		if token != "" {
+		if isTokenValid {
 			for _, stuff := range transaction.Stuffs {
 				if stuff.Data == nil {
 					continue

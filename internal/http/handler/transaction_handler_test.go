@@ -37,7 +37,8 @@ func setupTransactionTest(t *testing.T) *transactionTest {
 	xenditPayment := xendit_payment.NewXenditPayment(viper.GetString("payment.provider.xendit.api_key"))
 	stuffService := service.NewStuffService(db, validator)
 	stockService := service.NewStockService(db, validator)
-	transactionService := service.NewTransactionService(db, validator, xenditPayment)
+	tokenService := service.NewTokenService()
+	transactionService := service.NewTransactionService(db, validator, xenditPayment, tokenService)
 	handler := NewTransactionHandler(transactionService)
 
 	app := fiber.New()

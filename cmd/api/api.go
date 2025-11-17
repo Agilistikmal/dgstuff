@@ -37,7 +37,8 @@ func Run() *fiber.App {
 	stockHandler := handler.NewStockHandler(stockService)
 	stockHandler.InitRoutes(app)
 
-	transactionService := service.NewTransactionService(db, validator, xenditPayment)
+	tokenService := service.NewTokenService()
+	transactionService := service.NewTransactionService(db, validator, xenditPayment, tokenService)
 	transactionHandler := handler.NewTransactionHandler(transactionService)
 	transactionHandler.InitRoutes(app)
 
