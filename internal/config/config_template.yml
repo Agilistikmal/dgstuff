@@ -34,3 +34,17 @@ payment:
     xendit:
       api_key: "<xendit-api-key>"
       callback_token: "<xendit-callback-token>"
+
+mail:
+  smtp:
+    # Enable SMTP email sending
+    # If true, the email will be sent via SMTP
+    # If false, the email will be sent without SMTP
+    enabled: true
+    # SMTP host
+    # Example: smtp.gmail.com
+    host: "<smtp-host>"
+    port: 587
+    username: "<smtp-username>"
+    password: "<smtp-password>"
+    from: "<smtp-from>"
