@@ -3,10 +3,19 @@
   import Logo from "./Logo.svelte";
   import { AppInfoApi } from "../api/appinfo";
   import { onMount } from "svelte";
+  import { AuthApi } from "../api/auth";
 
   let appInfo = $state(null);
   onMount(async () => {
     appInfo = await AppInfoApi.get();
+  });
+
+  let authToken = $state(cookieStore.get("auth_token"));
+  let user = $state(null);
+  onMount(async () => {
+    if (authToken) {
+      user = await AuthApi.me();
+    }
   });
 </script>
 
@@ -34,6 +43,11 @@
         <Link to="/contact">
           <span>Contact</span>
         </Link>
+        {#if user?.role === "admin"}
+          <Link to="/admin">
+            <span class="text-brand">Admin</span>
+          </Link>
+        {/if}
       </div>
     </div>
   </div>

@@ -29,15 +29,25 @@
     }
   });
 
-  const getStatusColor = (prefix = "") => {
-    switch (transaction.status) {
-      case "pending":
-        return `${prefix}-brand`;
-      case "success":
-        return `${prefix}-green-500`;
-      case "failed":
-        return `${prefix}-red-500`;
-    }
+  const statusColor = {
+    pending: {
+      border: "border-brand",
+      borderb: "border-b-brand",
+      bg: "bg-brand",
+      text: "text-brand",
+    },
+    success: {
+      border: "border-green-500",
+      borderb: "border-b-green-500",
+      bg: "bg-green-500",
+      text: "text-green-500",
+    },
+    failed: {
+      border: "border-red-500",
+      borderb: "border-b-red-500",
+      bg: "bg-red-500",
+      text: "text-red-500",
+    },
   };
 
   const refreshPaymentStatus = async () => {
@@ -75,15 +85,18 @@
   {/if}
   {#if transaction}
     <div
-      class={`flex flex-col items-center gap-4 p-4 border border-gray-300 border-b-4 ${getStatusColor("border-b")} rounded-lg`}
+      class={`flex flex-col items-center gap-4 p-4 border border-gray-300 border-b-4 ${statusColor[transaction.status].borderb} rounded-lg`}
     >
-      <div class={`w-full ${getStatusColor("bg")} text-white rounded-lg p-2`}>
+      <div
+        class={`w-full ${statusColor[transaction.status].bg} text-white rounded-lg p-2`}
+      >
         <h1 class="text-lg font-bold text-center">Transaction</h1>
       </div>
       <div class="w-full">
         <div class="flex items-center gap-2 justify-between">
           <h2 class="text-lg font-bold">Transaction Details</h2>
-          <span class={`uppercase font-bold ${getStatusColor("text")}`}
+          <span
+            class={`uppercase font-bold ${statusColor[transaction.status].text}`}
             >{transaction.status}</span
           >
         </div>
@@ -125,7 +138,7 @@
                 0,
               )}
             </td>
-            <td class={`p-2 ${getStatusColor("text")}`}>
+            <td class={`p-2 ${statusColor[transaction.status].text}`}>
               {Intl.NumberFormat("id-ID", {
                 style: "currency",
                 currency: transaction.currency,
@@ -141,7 +154,7 @@
           onclick={() => {
             window.open(transaction.payment.url, "_blank");
           }}
-          class={`w-full border ${getStatusColor("border")} ${getStatusColor("text")} font-bold rounded-lg p-2 capitalize block text-center cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed`}
+          class={`w-full border ${statusColor[transaction.status].border} ${statusColor[transaction.status].text} font-bold rounded-lg p-2 capitalize block text-center cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed`}
           disabled={transaction.status !== "pending"}
         >
           {#if transaction.status === "pending"}

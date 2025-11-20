@@ -1,6 +1,8 @@
 package api
 
 import (
+	"strings"
+
 	"github.com/agilistikmal/dgstuff/internal/app"
 	"github.com/agilistikmal/dgstuff/internal/http/handler"
 	"github.com/agilistikmal/dgstuff/internal/pkg/payment/xendit_payment"
@@ -17,10 +19,20 @@ func Run() *fiber.App {
 	app := fiber.New(fiber.Config{
 		DisableStartupMessage: true,
 	})
+
+	allowedOrigins := []string{
+		"http://localhost:5173",
+		"http://localhost:8080",
+		"http://127.0.0.1:5173",
+		"http://127.0.0.1:8080",
+		viper.GetString("app.website_url"),
+	}
+
 	app.Use(cors.New(cors.Config{
-		AllowOrigins: "*",
-		AllowHeaders: "Origin, Content-Type, Accept, X-Transaction-Token",
-		AllowMethods: "GET, POST, PUT, DELETE, OPTIONS",
+		AllowOrigins:     strings.Join(allowedOrigins, ","),
+		AllowHeaders:     "Origin, Content-Type, Accept, X-Transaction-Token",
+		AllowMethods:     "GET, POST, PUT, DELETE, OPTIONS",
+		AllowCredentials: true,
 	}))
 
 	xenditPayment := xendit_payment.NewXenditPayment(viper.GetString("payment.provider.xendit.api_key"))

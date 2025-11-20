@@ -7,6 +7,7 @@ import (
 	"github.com/agilistikmal/dgstuff/internal/app"
 	"github.com/agilistikmal/dgstuff/internal/model"
 	"github.com/agilistikmal/dgstuff/internal/pkg"
+	"github.com/goccy/go-json"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -27,7 +28,23 @@ func (s *AuthService) Me(ctx context.Context, token string) (*model.User, error)
 		return nil, err
 	}
 
-	user := claims["user"].(model.User)
+	dataMap, ok := claims["data"].(map[string]any)
+	if !ok {
+		logrus.Errorf("data map not found in claims: %v", claims)
+		return nil, app.NewUnauthorizedError()
+	}
+	userBytes, err := json.Marshal(dataMap["user"])
+	if err != nil {
+		logrus.Errorf("failed to marshal user: %v", err)
+		return nil, app.NewInternalServerError()
+	}
+	var user model.User
+	err = json.Unmarshal(userBytes, &user)
+	if err != nil {
+		logrus.Errorf("failed to unmarshal user: %v", err)
+		return nil, app.NewInternalServerError()
+	}
+
 	return &user, nil
 }
 

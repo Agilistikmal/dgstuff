@@ -6,6 +6,7 @@ export const sendRequest = async (url, options = {}) => {
   return Promise.race([
     fetch(`${apiUrl}${url}`, {
       ...options,
+      credentials: "include",
     })
       .then((response) => {
         if (!response.ok) {

@@ -19,10 +19,10 @@ export class AuthApi {
     });
   }
 
-  static async register(email, password) {
+  static async register(email, password, confirm_password) {
     return await sendRequest(`${this.basePath}/register`, {
       method: "POST",
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, confirm_password }),
       headers: {
         "Content-Type": "application/json",
       },

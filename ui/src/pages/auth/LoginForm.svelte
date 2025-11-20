@@ -1,4 +1,5 @@
 <script>
+  import { navigate } from "svelte-routing";
   import { AuthApi } from "../../lib/api/auth";
 
   let email = $state("");
@@ -13,7 +14,13 @@
       loading = true;
       error = undefined;
       const response = await AuthApi.login(email, password);
-      console.log(response);
+      cookieStore.set("auth_token", response.token);
+      const getMe = await AuthApi.me();
+      if (getMe.role === "admin") {
+        navigate("/admin");
+      } else {
+        navigate("/");
+      }
     } catch (err) {
       console.error(err);
       if (err instanceof Error && err.message.includes("Unauthorized")) {
