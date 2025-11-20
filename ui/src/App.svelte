@@ -5,6 +5,8 @@
   import { AppInfoApi } from "./lib/api/appinfo";
   import { onMount } from "svelte";
   import TransactionPage from "./pages/TransactionPage.svelte";
+  import AdminPage from "./pages/admin/AdminPage.svelte";
+  import AuthPage from "./pages/auth/AuthPage.svelte";
 
   let appInfo = $state(null);
   onMount(async () => {
@@ -29,6 +31,7 @@
 </svelte:head>
 
 <Router {url}>
+  <!-- Public routes -->
   <Route path="/stuff/:slug" let:params>
     <StuffPage slug={params.slug} />
   </Route>
@@ -37,5 +40,15 @@
   </Route>
   <Route path="/">
     <HomePage />
+  </Route>
+
+  <!-- Admin routes -->
+  <Route path="/admin">
+    <AdminPage />
+  </Route>
+
+  <!-- Auth routes -->
+  <Route path="/auth">
+    <AuthPage />
   </Route>
 </Router>

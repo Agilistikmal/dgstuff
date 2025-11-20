@@ -5,6 +5,18 @@ app:
   description: "DGStuff is a platform for selling digital goods"
   # App logo URL
   logo_url: "https://dgstuff.com/logo.png"
+  # App website URL
+  website_url: "https://dgstuff.com"
+  # App version
+  version: "1.0.0"
+  # App email
+  email: "support@dgstuff.com"
+  # App phone
+  phone: "081234567890"
+  # App address
+  address: "Jl. Raya No. 123, Jakarta, Indonesia"
+  # App city
+  city: "Jakarta"
 
 database:
   # Database provider. supported: sqlite, mysql, postgres

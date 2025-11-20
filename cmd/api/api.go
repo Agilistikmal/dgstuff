@@ -24,6 +24,11 @@ func Run() *fiber.App {
 	}))
 
 	xenditPayment := xendit_payment.NewXenditPayment(viper.GetString("payment.provider.xendit.api_key"))
+	tokenService := service.NewTokenService()
+
+	authService := service.NewAuthService(db, validator, tokenService)
+	authHandler := handler.NewAuthHandler(authService)
+	authHandler.InitRoutes(app)
 
 	appInfoService := service.NewAppInfoService(db)
 	appInfoHandler := handler.NewAppInfoHandler(appInfoService)
@@ -37,7 +42,6 @@ func Run() *fiber.App {
 	stockHandler := handler.NewStockHandler(stockService)
 	stockHandler.InitRoutes(app)
 
-	tokenService := service.NewTokenService()
 	transactionService := service.NewTransactionService(db, validator, xenditPayment, tokenService)
 	transactionHandler := handler.NewTransactionHandler(transactionService)
 	transactionHandler.InitRoutes(app)
